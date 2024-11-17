@@ -1,0 +1,52 @@
+create layout --> rnfse 
+create component file --> rnfe
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+we create project using expo --> npx create-expo-app@latest
+we installed nativewind expo from docs
+
+we downloaded assets, constant, tailwindconfig-> colours fonts, layout.js-> font 
+        font ke liye, s1] assets me font ki files rkho 
+                      s2] root layout meuseFonts se unko available kr vaao 
+                      s3] tailwindconfig me daal do taaki usko as classname use kr sko 
+we create all files index, signin, signup
+then we set up appwrite --> 
+        s1] create project
+        s2] select android and copy package name 
+        s3] write package name in app.jsin
+        s4] create dtabase, collection, attributes vegra 
+        s5] write appwriteConfig, all other function vgera 
+
+then we set up context api in context -> GlobalProvider 
+then we make home, and useAppwrite hook, then home me vertical videos ka setion by using useAppwrite(getAllPosts);
+then we create trending or horizontal videos section using useAppwrite(getLatestPosts);
+        add animation using "react native animatable"
+        adding video using "expo-av
+then search set up kiya, 
+        params access through useLocalSearchparams
+        useAppwrite(() => searchPosts(query)); isme agar direct  searchPosts(query) pass krte toh function pass hone ke sath hi call ho jaat,
+                 callback se ye () bracket pass honge and then jab () call honge toh searchPosts(query) call hoga 
+        we create a index inside video collection ??
+then profile 
+then create bnaya -- file upload sikha 
+                                file upload ke liye --> "npm i expo-document-picker", he badme used ImagePicker
+                                sbse phle ek picker open kiya, jo document chunne dega 
+                                then createVideoPost call kiya, jo storage me file upload krega, and database me item create kr dega 
+                                        createVideoPost me uploadFile file upload krke, getFilePreview ki madad se urle vapis return kr rha hai 
+
+
+
+-------------------------------------------------------
+
+then - npm install react-native-chart-kit
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+components used -
+1] stack -> to navigate between components 
+            in root layout and auth layout
+2] tabs -> built in component for create bottom tab section
+           in tabs layout
