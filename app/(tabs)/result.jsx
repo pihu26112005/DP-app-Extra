@@ -45,37 +45,54 @@ const CreateResultUI = () => {
     try {
       const response = await storage.listFiles('671fa00f0021cb655fbd');
       const files = response.files;
-
+  
       const fileDataPromises = files.map(async (file) => {
         const fileUrl = await storage.getFileView('671fa00f0021cb655fbd', file.$id);
         const fileResponse = await fetch(fileUrl);
+  
         if (fileResponse.ok) {
-          const fileContent = await fileResponse.text(); // or fileResponse.json() if it's JSON
-
-          // Parse the file content
+          const fileContent = await fileResponse.text();
+  
+          // Split file content into lines and find where the data begins
           const lines = fileContent.split('\n').filter(line => line.trim() !== '');
-          const frequencies = [];
+          const dataStartIndex = lines.findIndex(line => line.startsWith("BEGIN CH1_DATA")) + 1;
+  
+          // Extract frequencies and values
+          const freq = [];
           const values = [];
-          lines.forEach(line => {
-            const [frequency, value] = line.trim().split(/\s+/);
-            frequencies.push(parseFloat(frequency));
-            values.push(parseFloat(value));
-          });
-
-          return { filename: file.name, frequencies, values };
+  
+          for (let i = dataStartIndex; i < lines.length; i++) {
+            const line = lines[i].trim();
+  
+            // Break if reaching the end of the data block
+            if (!line || line.startsWith('!') || line.startsWith('END')) break;
+  
+            const [frequency, val1, val2, val3, val4] = line.split(',').map(parseFloat);
+  
+            // Validate the parsed values
+            if (!isNaN(frequency) && [val1, val2, val3, val4].every(val => !isNaN(val))) {
+              freq.push(frequency);
+              values.push([val1, val2, val3, val4]);
+            } else {
+              console.log(`Skipping invalid line: ${line}`);
+            }
+          }
+  
+          return { filename: file.name, freq, values };
         } else {
           throw new Error(`Failed to fetch file content for ${file.name}`);
         }
       });
-
+  
       const allFileData = await Promise.all(fileDataPromises);
       setFileData(allFileData);
-      // console.log(allFileData);
+      // console.log(allFileData[0]); // Debugging: log the structured data
     } catch (error) {
       console.error("Error fetching files:", error);
       Alert.alert("Error", "Failed to fetch files from Appwrite storage");
     }
   };
+  
 
   useEffect(() => {
     fetchAllFiles();
@@ -96,97 +113,61 @@ const CreateResultUI = () => {
     }
   };
 
-  // const fetchFileFromAppwrite = async (fileId) => {
-  //   try {
-  //     const response = await storage.getFileView('671fa00f0021cb655fbd', fileId);
-  //     const fileUrl = response.href; // Assuming response contains the URL in href property
-  //     console.log(fileUrl); // Log the URL to inspect it
-
-  //     const fileResponse = await fetch(fileUrl);
-  //     if (fileResponse.ok) {
-  //       const fileContent = await fileResponse.text(); // or fileResponse.json() if it's JSON
-  //       return fileContent;
-  //     } else {
-  //       console.error("Failed to fetch file content from URL");
-  //       Alert.alert("Error", "Failed to fetch file content from URL");
-  //     }
-  //   } catch (error) {
-  //     console.error("Error fetching file:", error);
-  //     Alert.alert("Error", "Failed to fetch file from Appwrite");
-  //   }
-  // };
-
-  // const compareFiles = async () => {
-  //   if (!form.document) {
-  //     Alert.alert("Please upload a file to compare.");
-  //     return;
-  //   }
-
-  //   const uploadedFileContent = await form.document;
-  //   if (!uploadedFileContent) {
-  //     Alert.alert("Error", "Failed to read the uploaded file content.");
-  //     return;
-  //   }
-
-  //   const comparisons = await Promise.all(
-  //     files.map(async (file) => {
-  //       const storedFileContent = await fetchFileFromAppwrite(file.$id);
-  //       if (!storedFileContent) return { fileName: file.name, similarity: "N/A" };
-
-  //       // Perform string similarity comparison using string-similarity library
-  //       const similarity = stringSimilarity.compareTwoStrings(uploadedFileContent, storedFileContent) * 100;
-
-  //       return { fileName: file.name, similarity: similarity.toFixed(2) };
-  //     })
-  //   );
-
-  //   Alert.alert("Comparison Results", comparisons.map(({ fileName, similarity }) => `${fileName}: ${similarity}%`).join("\n"));
-  // };
-
 
   const uploadFile = async () => {
     if (!form.document) {
       Alert.alert("Please upload a file to compare.");
       return;
     }
-
+  
     setUploading(true);
-
+  
     try {
-      // console.log(form.document, "form.document");
       const { mimeType, ...rest } = form.document.assets[0];
       const asset = { type: mimeType, ...rest };
-
+  
       // Upload the file to Appwrite storage
-      const uploadResponse = await storage.createFile('671fa00f0021cb655fbd', ID.unique(), asset);
-      // console.log(uploadResponse, "uploadResponse");
-
+      const uploadResponse = await storage.createFile('678556be0035ff1d0135', ID.unique(), asset);
+  
       // Fetch the uploaded file content
-      const fileUrl = await storage.getFileView('671fa00f0021cb655fbd', uploadResponse.$id);
+      const fileUrl = await storage.getFileView('678556be0035ff1d0135', uploadResponse.$id);
       const fileResponse = await fetch(fileUrl);
+  
       if (fileResponse.ok) {
-        const fileContent = await fileResponse.text(); // or fileResponse.json() if it's JSON
-
-        // Parse the file content
+        const fileContent = await fileResponse.text();
+  
+        // Split file content into lines and find where the data begins
         const lines = fileContent.split('\n').filter(line => line.trim() !== '');
+        const dataStartIndex = lines.findIndex(line => line.startsWith("BEGIN CH1_DATA")) + 1;
+  
+        // Extract frequencies and values
         const frequencies = [];
         const values = [];
-        lines.forEach(line => {
-          const [frequency, value] = line.trim().split(/\s+/);
-          frequencies.push(parseFloat(frequency));
-          values.push(parseFloat(value));
-        });
-
+  
+        for (let i = dataStartIndex; i < lines.length; i++) {
+          const line = lines[i].trim();
+  
+          // Break if reaching the end of the data block
+          if (!line || line.startsWith('!') || line.startsWith('END')) break;
+  
+          const [frequency, val1, val2, val3, val4] = line.split(',').map(parseFloat);
+  
+          // Validate the parsed values
+          if (!isNaN(frequency) && [val1, val2, val3, val4].every(val => !isNaN(val))) {
+            frequencies.push(frequency);
+            values.push([val1, val2, val3, val4]);
+          } else {
+            console.log(`Skipping invalid line: ${line}`);
+          }
+        }
+  
         const uploadFileData = { filename: uploadResponse.name, frequencies, values };
         setUploadFileData(uploadFileData);
-        // console.log(uploadFileData, "uploadFileData");
-
+  
         Alert.alert("Success", "File uploaded and processed successfully.");
       } else {
         throw new Error(`Failed to fetch file content for ${uploadResponse.name}`);
       }
-
-      // fetchAllFiles();
     } catch (error) {
       console.error("Error uploading file:", error);
       Alert.alert("Error", "Failed to upload file to Appwrite storage.");
@@ -194,31 +175,50 @@ const CreateResultUI = () => {
       setUploading(false);
     }
   };
+  
 
 
   const calculateMSE = (values1, values2) => {
     if (values1.length !== values2.length) {
       throw new Error("Arrays must have the same length to calculate MSE.");
     }
-
-    let sum = 0;
-    for (let i = 2; i < values1.length; i++) {
-      const diff = values1[i] - values2[i];
-      sum += diff * diff;
+  
+    let totalSquaredError = 0;
+    let totalElements = 0;
+  
+    for (let i = 0; i < values1.length; i++) {
+      if (values1[i].length !== values2[i].length) {
+        throw new Error(`Mismatch in sub-array lengths at index ${i}`);
+      }
+  
+      for (let j = 0; j < values1[i].length; j++) {
+        const diff = values1[i][j] - values2[i][j];
+        totalSquaredError += diff * diff;
+        totalElements++;
+      }
     }
-
-    return sum / values1.length;
+    console.log("Total Squared Error:", totalSquaredError);
+    console.log("Total Elements:", totalElements);
+  
+    return totalSquaredError / totalElements;
   };
+  
 
   const findFileWithMinimumError = () => {
     if (!uploadFileData || !fileData || fileData.length === 0) {
       console.error("No data available for comparison.");
       return;
     }
-
+    console.log("Comparing uploaded file with all files...");
+    console.log("Uploaded file:", uploadFileData.filename);
+    console.log("Number of files to compare:", fileData.length);
+    console.log("............................................................................................................................")
+    console.log(fileData[0].values);
+    console.log("............................................................................................................................")
+  
     let minError = Infinity;
     let minErrorFile = null;
-
+  
     fileData.forEach(file => {
       try {
         const mse = calculateMSE(uploadFileData.values, file.values);
@@ -232,13 +232,14 @@ const CreateResultUI = () => {
         console.error(`Error calculating MSE for file ${file.filename}:`, error);
       }
     });
-
+  
     if (minErrorFile) {
       console.log(`File with minimum error: ${minErrorFile}`);
     } else {
       console.log("No file found with minimum error.");
     }
   };
+  
 
   // Example usage after uploading a file and fetching all files
   useEffect(() => {
@@ -252,6 +253,14 @@ const CreateResultUI = () => {
     const match = filename.match(/(\d+)mg/);
     return match ? parseInt(match[1], 10) : null;
   };
+
+
+  // useEffect(() => {
+  //   if ( fileData) {
+  //     console.log(fileData[0]);
+  //   }
+  // }, [fileData]);
+
 
 
   return (
