@@ -86,7 +86,6 @@ const CreateResultUI = () => {
   
       const allFileData = await Promise.all(fileDataPromises);
       setFileData(allFileData);
-      // console.log(allFileData[0]); // Debugging: log the structured data
     } catch (error) {
       console.error("Error fetching files:", error);
       Alert.alert("Error", "Failed to fetch files from Appwrite storage");
@@ -94,9 +93,9 @@ const CreateResultUI = () => {
   };
   
 
-  useEffect(() => {
-    fetchAllFiles();
-  }, []);
+  // useEffect(() => {
+  //   fetchAllFiles();
+  // }, []);
 
 
 
@@ -242,11 +241,11 @@ const CreateResultUI = () => {
   
 
   // Example usage after uploading a file and fetching all files
-  useEffect(() => {
-    if (uploadFileData && fileData) {
-      findFileWithMinimumError();
-    }
-  }, [uploadFileData, fileData]);
+  // useEffect(() => {
+  //   if (uploadFileData && fileData) {
+  //     findFileWithMinimumError();
+  //   }
+  // }, [uploadFileData, fileData]);
 
 
   const extractDosageFromFilename = (filename) => {
@@ -255,12 +254,23 @@ const CreateResultUI = () => {
   };
 
 
-  // useEffect(() => {
-  //   if ( fileData) {
-  //     console.log(fileData[0]);
-  //   }
-  // }, [fileData]);
+  const fetchLatestResult = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('https://dp-project-theta.vercel.app/api/getLatestResult');
+      const data = await response.json();
+      setLatestResult(data);
+      extractValue(data.matched_file_name);
+    } catch (error) {
+      console.error('Error fetching latest result:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
+    fetchLatestResult();
+  }, []);
 
 
   return (
@@ -273,11 +283,6 @@ const CreateResultUI = () => {
           </Text>
 
           <TouchableOpacity onPress={openPicker}>
-            {/* {form.document ? (
-              <Text className="text-base text-gray-100 font-pmedium">
-                {form.document.name}
-              </Text>
-            ) : ( */}
             <View className="w-full h-16 px-4 bg-black-100 rounded-2xl border-2 border-black-200 flex justify-center items-center flex-row space-x-2">
               <Image
                 source={icons.upload}
@@ -289,7 +294,6 @@ const CreateResultUI = () => {
                 Choose a file
               </Text>
             </View>
-            {/* )} */}
           </TouchableOpacity>
         </View>
 
@@ -318,50 +322,6 @@ const CreateResultUI = () => {
           </View>
         </View>
 
-        {/* {minErrorFile && (
-          <View className="mt-4">
-          <Text className="text-lg text-white font-psemibold text-center">
-            Frequency vs Values
-          </Text>
-          
-          <LineChart
-            data={{
-              labels: minErrorFile.frequencies.splice(2).map(f => f.toFixed(2)),
-              datasets: [
-                {
-                  data: minErrorFile.values.splice(2),
-                },
-              ],
-            }}
-            width={Dimensions.get('window').width - 32} // from react-native
-            height={220}
-            yAxisLabel=""
-            yAxisSuffix=""
-            chartConfig={{
-              backgroundColor: '#000',
-              backgroundGradientFrom: '#000',
-              backgroundGradientTo: '#000',
-              decimalPlaces: 2, // optional, defaults to 2dp
-              color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-              labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-              style: {
-                borderRadius: 16,
-              },
-              propsForDots: {
-                r: '6',
-                strokeWidth: '2',
-                stroke: '#ffa726',
-              },
-            }}
-            bezier
-            style={{
-              marginVertical: 8,
-              borderRadius: 16,
-            }}
-          />
-        </View>
-        )} */} 
-
         { minErrorFile && (
           <View className="mt-4 ">
           {extractDosageFromFilename(minErrorFile.filename) < 180 ? (
@@ -371,9 +331,6 @@ const CreateResultUI = () => {
           )}
         </View>
         )}
-
-        <Text></Text>
-
 
       </ScrollView>
     </SafeAreaView>
